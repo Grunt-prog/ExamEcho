@@ -556,11 +556,38 @@
         if ('webkitSpeechRecognition' in window) {
             recognition = new webkitSpeechRecognition();
             recognition.continuous = false;
-            recognition.onstart = () => { isRecording = true; document.getElementById('micBtn').classList.add('recording'); };
-            recognition.onend = () => { isRecording = false; document.getElementById('micBtn').classList.remove('recording'); };
+            recognition.interimResults = true;
+            
+            recognition.onstart = () => { 
+                isRecording = true; 
+                document.getElementById('micBtn').classList.add('recording'); 
+                document.getElementById('questionInput').placeholder = "Listening...";
+            };
+            
+            recognition.onend = () => { 
+                isRecording = false; 
+                document.getElementById('micBtn').classList.remove('recording'); 
+                document.getElementById('questionInput').placeholder = "How do I secure an S3 bucket?";
+            };
+            
             recognition.onresult = (event) => {
-                document.getElementById('questionInput').value = event.results[0][0].transcript;
-                askQuestion();
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                    
+                    // Automatic Interruption: Stop AI speaking as soon as first words are detected
+                    if (isSpeaking && transcript.trim().length > 0) {
+                        stopSpeaking();
+                    }
+                }
+                
+                // Show text live in the input field
+                document.getElementById('questionInput').value = transcript;
+                
+                // If it's the final sentence, automatically ask
+                if (event.results[event.results.length - 1].isFinal) {
+                    askQuestion();
+                }
             };
         }
 
