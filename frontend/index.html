@@ -310,6 +310,7 @@
         let recognition;
         let isRecording = false;
         let isSpeaking = false;
+        let stopRequested = false;
         let conversationHistory = [];
 
         // ── THEME TOGGLE ──────────────────────────────────────
@@ -320,8 +321,16 @@
 
         // ── STOP SPEAKING ─────────────────────────────────────
         function stopSpeaking() {
+            stopRequested = true;
             speechSynthesis.cancel();
             isSpeaking = false;
+            if (recognition && isRecording) {
+                try {
+                    recognition.abort();
+                } catch (e) {
+                    console.warn('Failed to abort recognition:', e);
+                }
+            }
             document.getElementById('stopBtn').classList.remove('visible');
             document.getElementById('transcription').textContent = '⏹️ Stopped';
             setTimeout(() => {
@@ -435,10 +444,20 @@
 
             recognition.onerror = (event) => {
                 document.getElementById('transcription').textContent = `Error: ${event.error}`;
-                if (isSpeaking) {
+                isRecording = false;
+                document.getElementById('micBtn').classList.remove('recording');
+                if (isSpeaking && !stopRequested) {
                     setTimeout(() => {
                         try { recognition.start(); } catch (e) {}
                     }, 500);
+                }
+            };
+
+            recognition.onend = () => {
+                isRecording = false;
+                document.getElementById('micBtn').classList.remove('recording');
+                if (!isSpeaking && !stopRequested) {
+                    document.getElementById('transcription').textContent = '';
                 }
             };
         }
@@ -451,9 +470,12 @@
                 document.getElementById('micBtn').classList.remove('recording');
                 document.getElementById('transcription').textContent = '';
             } else {
+                stopRequested = false;
                 document.getElementById('transcription').textContent = '';
                 document.getElementById('questionInput').value = '';
-                try { recognition.start(); } catch (e) {}
+                try { recognition.start(); } catch (e) {
+                    console.warn('Recognition start failed:', e);
+                }
             }
         }
 
@@ -515,6 +537,7 @@
 
         function readAloud(text) {
             if ('speechSynthesis' in window) {
+                stopRequested = false;
                 speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.rate = 1;
@@ -524,17 +547,23 @@
                 showStopBtn();
 
                 utterance.onstart = () => {
-                    try { recognition.start(); } catch (e) {}
+                    if (!stopRequested) {
+                        try { recognition.start(); } catch (e) {}
+                    }
                 };
                 utterance.onend = () => {
                     isSpeaking = false;
                     hideStopBtn();
-                    try { recognition.start(); } catch (e) {}
+                    if (!stopRequested) {
+                        try { recognition.start(); } catch (e) {}
+                    }
                 };
                 utterance.onerror = () => {
                     isSpeaking = false;
                     hideStopBtn();
-                    try { recognition.start(); } catch (e) {}
+                    if (!stopRequested) {
+                        try { recognition.start(); } catch (e) {}
+                    }
                 };
 
                 speechSynthesis.speak(utterance);
