@@ -309,6 +309,13 @@
         /* Trash Icon SVG */
         .icon-trash { width: 16px; height: 16px; fill: currentColor; }
 
+        /* Stop button — hidden by default */
+        .btn-stop {
+            background: #f59e0b; color: white;
+            display: none;
+        }
+        .btn-stop.visible { display: flex; }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -368,6 +375,7 @@
                 
                 <div class="input-wrapper">
                     <input type="text" id="questionInput" placeholder="How do I secure an S3 bucket?" autocomplete="off" />
+                    <button class="btn-circle btn-stop" id="stopBtn" onclick="stopSpeaking()" title="Stop Speaking">⏹️</button>
                     <button class="btn-circle btn-mic" id="micBtn" onclick="toggleMicrophone()">🎤</button>
                     <button class="btn-circle btn-ask" onclick="askQuestion()">🚀</button>
                 </div>
@@ -379,8 +387,46 @@
         const API_BASE = "http://localhost:8000";
         let recognition;
         let isRecording = false;
+        let isSpeaking = false;
+        let stopRequested = false;
         let conversationHistory = [];
         let chatItems = [];
+
+        function stopSpeaking() {
+            stopRequested = true;
+            speechSynthesis.cancel();
+            isSpeaking = false;
+            document.getElementById('stopBtn').classList.remove('visible');
+        }
+
+        function readAloud(text) {
+            if ('speechSynthesis' in window) {
+                stopRequested = false;
+                speechSynthesis.cancel();
+                
+                // Fix for SynthesisUtterance - check if window.SpeechSynthesisUtterance exists
+                const SpeechUtterance = window.SpeechSynthesisUtterance || window.webkitSpeechSynthesisUtterance;
+                if (!SpeechUtterance) return;
+                
+                const utt = new SpeechUtterance(text);
+                utt.rate = 1;
+                utt.pitch = 1;
+                utt.volume = 1;
+                isSpeaking = true;
+                document.getElementById('stopBtn').classList.add('visible');
+
+                utt.onend = () => {
+                    isSpeaking = false;
+                    document.getElementById('stopBtn').classList.remove('visible');
+                };
+                utt.onerror = () => {
+                    isSpeaking = false;
+                    document.getElementById('stopBtn').classList.remove('visible');
+                };
+
+                speechSynthesis.speak(utt);
+            }
+        }
 
         function toggleTheme() {
             const body = document.body;
@@ -475,6 +521,8 @@
                     const status = document.getElementById('statusMessage');
                     status.textContent = data.message;
                     status.style.color = data.added_to_notion ? '#10b981' : '#f59e0b';
+
+                    readAloud(data.answer);
                 }
             } catch (err) {
                 document.getElementById('loading').style.display = 'none';
@@ -516,8 +564,12 @@
 
         function toggleMicrophone() {
             if (!recognition) return alert("Browser not supported");
+            if (isSpeaking) stopSpeaking();
             if (isRecording) recognition.stop();
-            else recognition.start();
+            else {
+                document.getElementById('questionInput').value = '';
+                recognition.start();
+            }
         }
 
         async function checkHealth() {
