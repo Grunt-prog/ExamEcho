@@ -35,7 +35,12 @@ ENV/
 env/
 .venv
 myenv/
+myenvv/
 .env.venv
+
+# Startup Scripts
+run_app.bat
+run_app.sh
 
 # IDE
 .vscode/

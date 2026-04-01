@@ -1,235 +1,83 @@
-# ExamEcho
-ExamEcho is your AI-powered study companion that makes exam preparation effortless. Ask any question by typing or speaking, get a clear and concise answer echoed back to you in real time, and have every Q&A automatically saved to Notion — building your personal knowledge base as you study. Whether you're tackling certifications, competitive exams, or university finals, ExamEcho ensures every answer you hear is one you can always come back to.
-# AWS Question Answerer 🤖
+# 🤖 AWS Architect Assistant (Premium)
 
-I made it for my AWS, we can make this as any exam notes taker
-A web app that answers AWS Solutions Architect questions using **OpenAI** and automatically syncs every Q&A to **Notion**.
+A state-of-the-art AI-powered assistant designed to help you prepare for the **AWS Solutions Architect Associate (SAA-C03) Exam**. 
 
-## Features ✨
-
-- 🎤 **Voice input** — ask questions by speaking
-- ⌨️ **Text input** — type questions manually
-- 🧠 **OpenAI-powered** — AWS exam-style tutor responses
-- 📝 **Notion sync** — automatically append answers to your page
-- 🔊 **Text-to-speech** — answers read aloud in-browser
-- ⚡ **Live health status** — checks OpenAI + Notion connectivity
+Experience a seamless, hands-free cloud architecture learning environment with **Notion integration** and a premium **Neon Cyberpunk** interface.
 
 ---
 
-## Prerequisites
+## ✨ Key Features
 
-- **Python 3.9+**
-- **OpenAI API key**
-- **Notion integration token** and **Notion page ID**
+### 🎨 Stunning Visual Experience
+- **Neon Cyberpunk Glassmorphism**: High-end UI with glowing gradients and blurred glass panels.
+- **Dynamic Themes**: Seamless toggle between sleek Neon Dark mode and crisp Pastel Light mode.
 
----
+### 🎤 Advanced Interactivity
+- **Hands-Free (Hot-Mic)**: The AI automatically listens for your next question immediately after it finishes speaking its response.
+- **Real-Time Transcription**: Watch your voice transcribe into text live in the input field.
+- **Smart Interruption**: Ask a new question at any time to immediately stop the current reading.
+- **Full TTS (Text-to-Speech)**: Assistant answers are read aloud with high clarity.
 
-## Quick Start
-
-### 1. Activate the Python environment
-If the included `myenv` already exists:
-
-```powershell
-myenv\Scripts\Activate.ps1
-```
-
-Or create a fresh environment:
-
-```powershell
-python -m venv myenv
-myenv\Scripts\Activate.ps1
-```
-
-### 2. Install backend dependencies
-
-```powershell
-cd backend
-pip install -r requirements.txt
-```
-
-### 3. Copy environment template
-
-```powershell
-copy ..\.env.example ..\.env
-```
-
-Then edit `.env` and fill in your credentials:
-
-```env
-OPENAI_API_KEY=sk-your-openai-key
-OPENAI_MODEL=gpt-3.5-turbo
-NOTION_API_KEY=ntn-your-notion-key
-NOTION_PAGE_ID=your-notion-page-id
-SERVER_HOST=0.0.0.0
-SERVER_PORT=8000
-DEBUG=true
-```
-
-### 4. Start the backend
-
-```powershell
-cd backend
-python main.py
-```
-
-The backend will start on `http://0.0.0.0:8000`.
-
-### 5. Open the frontend
-
-Open `frontend/index.html` in your browser.
-
-Alternatively, serve it locally from the project root:
-
-```powershell
-python -m http.server 5500 --directory frontend
-```
-
-Then open:
-
-```text
-http://localhost:5500
-```
+### 📂 Productivity & Integration
+- **Direct Notion Sync**: Every Q&A pair is automatically formatted and saved to your workspace for high-retention study.
+- **Intelligent Sidebar**: Keep track of recent queries with full-text tooltips on hover.
+- **One-Click Deletion**: Remove unwanted notes from Notion directly from the Sidebar.
+- **One-Click Clear**: Instantly reset your current chat environment.
 
 ---
 
-## How to Use
+## 🛠️ Technology Stack
 
-1. Confirm the health status in the UI
-2. Ask an AWS question by typing or speaking
-3. Wait for the assistant answer
-4. Verify the Q&A entry in your Notion page
-
----
-
-## Model Recommendation
-
-Use `gpt-3.5-turbo` for fast AWS question answering.
-
-To switch models, update `OPENAI_MODEL` in `.env` and restart the backend.
+- **Frontend**: Vanilla JavaScript + Premium CSS3 Glassmorphism
+- **Backend**: FastAPI (Python)
+- **AI Engine**: OpenAI GPT-4o / GPT-3.5
+- **Knowledge Base**: Notion API
+- **Voice Engine**: Web Speech API (Recognition & Synthesis)
 
 ---
 
-## Troubleshooting
+## 🚀 Quick Start (Local Setup)
 
-### OpenAI fails
-- Confirm `OPENAI_API_KEY` is correct
-- Use the OpenAI secret key from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-- Restart the backend after editing `.env`
+1. **Prerequisites**:
+   - Python 3.10+
+   - OpenAI API Key
+   - Notion API Key & Page ID
 
-### Notion sync fails
-- Confirm `NOTION_API_KEY` is valid
-- Confirm the integration is shared with the target page
-- Confirm `NOTION_PAGE_ID` is correct
-- Run `python backend/test_notion.py`
+2. **Configuration**:
+   Copy `.env.example` to `.env` and add your credentials:
+   ```env
+   OPENAI_API_KEY=your_key
+   NOTION_API_KEY=your_key
+   NOTION_PAGE_ID=your_page_id
+   ```
 
-### Microphone or speech issues
-- Use Chrome, Edge, Firefox, or Safari
-- Allow microphone access in the browser
-- The Web Speech API is required for voice input
-
----
-
-## Project Structure
-
-```text
-OpenaiChat to Notion app/
-├── backend/
-│   ├── main.py
-│   ├── openai_client.py
-│   ├── notion_client.py
-│   ├── requirements.txt
-│   └── test_notion.py
-├── frontend/
-│   └── index.html
-├── .env
-├── .env.example
-└── README.md
-```
+3. **Run the App**:
+   The easiest way to start both servers is using our automated scripts:
+   
+   **Windows (PowerShell/CMD):**
+   ```cmd
+   ./run_app.bat
+   ```
+   
+   **Bash/Git Bash:**
+   ```bash
+   ./run_app.sh
+   ```
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
-```
-[Browser UI] → [FastAPI Backend] → [OpenAI API]
-                              ↘ [Notion API]
-```
-
-### Request flow
-1. User sends a question from the frontend
-2. Backend calls OpenAI for an AWS answer
-3. Backend writes the Q&A pair to Notion
-4. Frontend displays and speaks the answer
+- **`frontend/`**: contains `index.html` and the premium CSS logic.
+- **`backend/`**: contains the FastAPI logic (`main.py`) and clients for OpenAI/Notion.
+- **`run_app.bat`/`.sh`**: handle the environment activation and port management (Backend: 8000, Frontend: 3000).
 
 ---
 
-## API Endpoints
-
-### `POST /ask`
-Send a question and receive an answer with Notion sync.
-
-**Request body:**
-
-```json
-{
-  "question": "What is AWS S3?"
-}
-```
-
-**Response:**
-
-```json
-{
-  "question": "What is AWS S3?",
-  "answer": "AWS S3 is...",
-  "added_to_notion": true,
-  "message": "Done ✓ Added to Notion"
-}
-```
-
-### `GET /health`
-Check service connectivity.
-
-**Response:**
-
-```json
-{
-  "status": "ok",
-  "openai": "connected",
-  "notion": "connected"
-}
-```
+## 📜 Git Workflow
+The project follows a feature-branch workflow. All premium UI changes were developed in a `feature/ui-overhaul` branch and merged into `main` for production stability.
 
 ---
 
-## Environment Variables
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI secret key | `sk-abc123...` |
-| `OPENAI_MODEL` | Model to use | `gpt-3.5-turbo` |
-| `NOTION_API_KEY` | Notion integration token | `ntn_abc123...` |
-| `NOTION_PAGE_ID` | Notion page ID | `3333c1cd-5e9c-...` |
-| `SERVER_HOST` | Backend host | `0.0.0.0` |
-| `SERVER_PORT` | Backend port | `8000` |
-
----
-
-## Notes
-
-- Do not commit `.env`
-- The app is tuned for AWS Solutions Architect exam style questions
-- The frontend communicates with the backend at `http://localhost:8000`
-  
----
-
-## Questions or Issues?
-
-- First check the Troubleshooting section
-- Run `python backend/test_notion.py` for Notion diagnostics
-- Confirm your `.env` values are correct
-
-Webapp Images
-<img width="1910" height="983" alt="image" src="https://github.com/user-attachments/assets/69bb4e2a-bce1-4e9e-88d3-5bf322d200cd" />
-
-Enjoy! 🎉
+## 🤝 Contributing
+Contributions are welcome! Feel free to push issues or create pull requests for new exam preparation features.
