@@ -1,4 +1,5 @@
 # ExamEcho
+ExamEcho is your AI-powered study companion that makes exam preparation effortless. Ask any question by typing or speaking, get a clear and concise answer echoed back to you in real time, and have every Q&A automatically saved to Notion — building your personal knowledge base as you study. Whether you're tackling certifications, competitive exams, or university finals, ExamEcho ensures every answer you hear is one you can always come back to.
 # AWS Question Answerer 🤖
 
 I made it for my AWS, we can make this as any exam notes taker
@@ -219,13 +220,7 @@ Check service connectivity.
 - Do not commit `.env`
 - The app is tuned for AWS Solutions Architect exam style questions
 - The frontend communicates with the backend at `http://localhost:8000`
-
----
-
-## License
-
-MIT
-
+  
 ---
 
 ## Questions or Issues?
@@ -233,5 +228,8 @@ MIT
 - First check the Troubleshooting section
 - Run `python backend/test_notion.py` for Notion diagnostics
 - Confirm your `.env` values are correct
+
+Webapp Images
+<img width="1910" height="983" alt="image" src="https://github.com/user-attachments/assets/69bb4e2a-bce1-4e9e-88d3-5bf322d200cd" />
 
 Enjoy! 🎉
