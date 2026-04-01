@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Architect Assistant</title>
+    <style>
+        :root {
+            --bg-primary: #fff;
+            --bg-secondary: #f3f4f6;
+            --text-primary: #111;
+            --text-secondary: #666;
+            --border-color: #d1d5db;
+            --input-bg: #fff;
+            --message-assistant-bg: #f3f4f6;
+            --message-assistant-text: #111;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #404040;
+            --input-bg: #2d2d2d;
+            --message-assistant-bg: #2d2d2d;
+            --message-assistant-text: #e0e0e0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header-status {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.connected { background: #10b981; }
+        .status-dot.disconnected { background: #ef4444; }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .theme-toggle:hover { background: var(--bg-secondary); }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--bg-primary);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 12px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon { font-size: 48px; opacity: 0.5; }
+        .empty-state-text { font-size: 14px; color: var(--text-secondary); }
+
+        /* Message Styles */
+        .message-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 8px;
+            align-items: flex-end;
+        }
+
+        .message-group.user { justify-content: flex-end; }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant {
+            background: var(--message-assistant-bg);
+            color: var(--message-assistant-text);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 4px;
+        }
+
+        /* Input Footer */
+        .input-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 16px 20px;
+            background: var(--bg-primary);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input[type="text"]::placeholder { color: var(--text-secondary); }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-ask { background: #667eea; color: white; }
+        .btn-ask:hover { background: #5568d3; }
+        .btn-ask:active { transform: scale(0.98); }
+
+        .btn-mic { background: #ff6b6b; color: white; }
+        .btn-mic:hover { background: #ee5a52; }
+        .btn-mic.recording {
+            background: #ff4757;
+            animation: pulse 1s infinite;
+        }
+
+        /* Stop button — visible only while speaking */
+        .btn-stop {
+            background: #f59e0b;
+            color: white;
+            display: none;
+        }
+
+        .btn-stop:hover { background: #d97706; }
+        .btn-stop.visible { display: flex; }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 71, 87, 0); }
+        }
+
+        .btn-clear { background: #ef4444; color: white; }
+        .btn-clear:hover { background: #dc2626; }
+
+        .transcription-text { color: #666; font-size: 12px; min-height: 18px; }
+
+        .status-message { font-size: 12px; color: #666; }
+        .status-message.success { color: #10b981; }
+        .status-message.error { color: #ef4444; }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .chat-container::-webkit-scrollbar { width: 8px; }
+        .chat-container::-webkit-scrollbar-track { background: transparent; }
+        .chat-container::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        .chat-container::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    </style>
+</head>
+<body class="dark-mode">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="header-title">🤖 AWS Architect Assistant</div>
+            <div class="header-status">
+                <div class="status-item">
+                    <div class="status-dot" id="openaiStatus"></div>
+                    <span id="openaiText">OpenAI</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-dot" id="notionStatus"></div>
+                    <span id="notionText">Notion</span>
+                </div>
+            </div>
+        </div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">☀️</button>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-container" id="chatContainer">
+        <div class="empty-state">
+            <div class="empty-state-icon">💭</div>
+            <div class="empty-state-text">Start by asking an AWS question...</div>
+        </div>
+    </div>
+
+    <!-- Input Footer -->
+    <div class="input-footer">
+        <div class="transcription-text" id="transcription"></div>
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <span>Thinking...</span>
+        </div>
+        <div class="status-message" id="statusMessage"></div>
+        <div class="input-wrapper">
+            <input type="text" id="questionInput" placeholder="Ask about AWS..." />
+            <button class="btn-ask" id="submitBtn" onclick="askQuestion()">🚀 Ask</button>
+            <button class="btn-stop" id="stopBtn" onclick="stopSpeaking()">⏹️ Stop</button>
+            <button class="btn-mic" id="micBtn" onclick="toggleMicrophone()">🎤</button>
+            <button class="btn-clear" id="clearBtn" onclick="clearConversation()">🗑️</button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8000";
+        let recognition;
+        let isRecording = false;
+        let isSpeaking = false;
+        let conversationHistory = [];
+
+        // ── THEME TOGGLE ──────────────────────────────────────
+        function toggleTheme() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            document.getElementById('themeToggle').textContent = isDark ? '☀️' : '🌙';
+        }
+
+        // ── STOP SPEAKING ─────────────────────────────────────
+        function stopSpeaking() {
+            speechSynthesis.cancel();
+            isSpeaking = false;
+            document.getElementById('stopBtn').classList.remove('visible');
+            document.getElementById('transcription').textContent = '⏹️ Stopped';
+            setTimeout(() => {
+                document.getElementById('transcription').textContent = '';
+            }, 1500);
+        }
+
+        function showStopBtn() {
+            document.getElementById('stopBtn').classList.add('visible');
+        }
+
+        function hideStopBtn() {
+            document.getElementById('stopBtn').classList.remove('visible');
+        }
+        // ──────────────────────────────────────────────────────
+
+        const AWS_CORRECTIONS = {
+            'easy to': 'EC2', 'ec too': 'EC2', 'e c two': 'EC2', 'e c to': 'EC2', 'esy to': 'EC2',
+            'as 3': 'S3', 'as-3': 'S3', 's-3': 'S3', 'are ds': 'RDS',
+            'dynamo db': 'DynamoDB', 'dynamodb': 'DynamoDB', 'iam': 'IAM', 'vpc': 'VPC',
+            'elastic cache': 'ElastiCache', 'lambda': 'Lambda', 'cloud formation': 'CloudFormation',
+            'route 53': 'Route 53', 'api gateway': 'API Gateway', 'cloud watch': 'CloudWatch',
+            'sns': 'SNS', 'sqs': 'SQS', 'auto scaling': 'Auto Scaling', 'elastic load balancing': 'Elastic Load Balancing',
+            'elastic beanstalk': 'Elastic Beanstalk', 'red shift': 'Redshift', 'kinesis': 'Kinesis',
+            'glue': 'AWS Glue', 'athena': 'Athena', 'emr': 'EMR', 'sage maker': 'SageMaker',
+            'recognition': 'Rekognition', 'comprehend': 'Comprehend', 'polly': 'Polly', 'devops': 'DevOps',
+            'code pipeline': 'CodePipeline', 'code build': 'CodeBuild', 'code commit': 'CodeCommit',
+            'step functions': 'Step Functions', 'fargate': 'Fargate', 'eeks': 'EKS', 'ecs': 'ECS',
+            'e b s': 'EBS', 'e f s': 'EFS', 'secret manager': 'Secrets Manager', 'parameter store': 'Parameter Store',
+            'ace m': 'ACM', 'certificate manager': 'Certificate Manager', 'a w s': 'AWS', 'a w ses': 'AWS', 'double you': 'AWS'
+        };
+
+        const OBVIOUS_ERRORS = {
+            'water': 'what', 'wot': 'what', 'wear': 'where', 'whore': 'where'
+        };
+
+        function fixSpacing(text) {
+            let fixed = text;
+            fixed = fixed.replace(/\b(a\s+w\s+s|aw\s+s|a\s+ws)\b/gi, 'AWS');
+            fixed = fixed.replace(/\bcity\b/gi, 'AWS');
+            fixed = fixed.replace(/\ba\s+w\s+ease\b/gi, 'AWS');
+            fixed = fixed.replace(/\baws\b/gi, 'AWS');
+            fixed = fixed.replace(/\b(e\s+c\s+2|e\s+c\s+two|easy\s+to|e\s+see\s+two)\b/gi, 'EC2');
+            fixed = fixed.replace(/\b(s\s+3|s\s+three|as\s+3|as\s+three)\b/gi, 'S3');
+            fixed = fixed.replace(/\b(r\s+d\s+s|are\s+d\s+s|are\s+ds)\b/gi, 'RDS');
+            fixed = fixed.replace(/\b(v\s+p\s+c|v\s+p\s+see)\b/gi, 'VPC');
+            fixed = fixed.replace(/\b(i\s+a\s+m|i\s+am)\b/gi, 'IAM');
+            fixed = fixed.replace(/\b(e\s+c\s+s|e\s+see\s+s)\b/gi, 'ECS');
+            fixed = fixed.replace(/\b(e\s+k\s+s|e\s+ks)\b/gi, 'EKS');
+            fixed = fixed.replace(/\b(e\s+b\s+s|e\s+bs)\b/gi, 'EBS');
+            fixed = fixed.replace(/\b(e\s+f\s+s|e\s+fs)\b/gi, 'EFS');
+            fixed = fixed.replace(/\b(a\s+l\s+b|alb)\b/gi, 'ALB');
+            fixed = fixed.replace(/\b(n\s+l\s+b|nlb)\b/gi, 'NLB');
+            fixed = fixed.replace(/\b(g\s+l\s+b|glb)\b/gi, 'GLB');
+            fixed = fixed.replace(/\bdynamo\s+db\b/gi, 'DynamoDB');
+            fixed = fixed.replace(/\bcloud\s+formation\b/gi, 'CloudFormation');
+            fixed = fixed.replace(/\bcf\b/gi, 'CloudFormation');
+            fixed = fixed.replace(/\bcloud\s+watch\b/gi, 'CloudWatch');
+            fixed = fixed.replace(/\b(s\s+n\s+s|sns)\b/gi, 'SNS');
+            fixed = fixed.replace(/\b(s\s+q\s+s|sqs)\b/gi, 'SQS');
+            return fixed;
+        }
+
+        function correctAWSTerms(text) {
+            let corrected = fixSpacing(text);
+            for (const [wrong, correct] of Object.entries(AWS_CORRECTIONS)) {
+                const regex = new RegExp(`\\b${wrong}\\b`, 'gi');
+                corrected = corrected.replace(regex, correct);
+            }
+            for (const [wrong, correct] of Object.entries(OBVIOUS_ERRORS)) {
+                const regex = new RegExp(`\\b${wrong}\\b`, 'gi');
+                corrected = corrected.replace(regex, correct);
+            }
+            return corrected;
+        }
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                isRecording = true;
+                document.getElementById('micBtn').classList.add('recording');
+                document.getElementById('transcription').textContent = '🎤 Listening...';
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                const corrected = correctAWSTerms(transcript);
+                document.getElementById('questionInput').value = corrected;
+
+                if (isSpeaking && event.results[event.results.length - 1].isFinal) {
+                    speechSynthesis.cancel();
+                    isSpeaking = false;
+                    hideStopBtn();
+                    document.getElementById('transcription').textContent = '⏸️ Interrupted';
+                    setTimeout(() => askQuestion(), 300);
+                } else if (event.results[event.results.length - 1].isFinal && !isSpeaking) {
+                    isRecording = false;
+                    document.getElementById('micBtn').classList.remove('recording');
+                    document.getElementById('transcription').textContent = '✓ Ready';
+                    setTimeout(() => askQuestion(), 500);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                document.getElementById('transcription').textContent = `Error: ${event.error}`;
+                if (isSpeaking) {
+                    setTimeout(() => {
+                        try { recognition.start(); } catch (e) {}
+                    }, 500);
+                }
+            };
+        }
+
+        function toggleMicrophone() {
+            if (!recognition) { alert('Speech Recognition not supported'); return; }
+            if (isRecording) {
+                recognition.stop();
+                isRecording = false;
+                document.getElementById('micBtn').classList.remove('recording');
+                document.getElementById('transcription').textContent = '';
+            } else {
+                document.getElementById('transcription').textContent = '';
+                document.getElementById('questionInput').value = '';
+                try { recognition.start(); } catch (e) {}
+            }
+        }
+
+        function addMessage(role, content) {
+            const container = document.getElementById('chatContainer');
+            const emptyState = container.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+
+            const messageGroup = document.createElement('div');
+            messageGroup.className = `message-group ${role === 'user' ? 'user' : ''}`;
+
+            const message = document.createElement('div');
+            message.className = `message ${role === 'user' ? 'user' : 'assistant'}`;
+            message.textContent = content;
+
+            messageGroup.appendChild(message);
+            container.appendChild(messageGroup);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function askQuestion() {
+            const question = document.getElementById('questionInput').value.trim();
+            if (!question) return;
+
+            addMessage('user', question);
+            document.getElementById('questionInput').value = '';
+            document.getElementById('transcription').textContent = '';
+            document.getElementById('loading').style.display = 'flex';
+            document.getElementById('statusMessage').textContent = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/ask`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, conversation_history: conversationHistory })
+                });
+
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+
+                if (response.ok) {
+                    conversationHistory.push({ role: "user", content: question });
+                    conversationHistory.push({ role: "assistant", content: data.answer });
+                    addMessage('assistant', data.answer);
+
+                    const statusMsg = document.getElementById('statusMessage');
+                    statusMsg.textContent = data.message;
+                    statusMsg.className = data.added_to_notion ? 'status-message success' : 'status-message error';
+
+                    readAloud(data.answer);
+                } else {
+                    addMessage('assistant', `Error: ${data.detail}`);
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                addMessage('assistant', `Connection error: ${error.message}`);
+            }
+        }
+
+        function readAloud(text) {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                isSpeaking = true;
+                showStopBtn();
+
+                utterance.onstart = () => {
+                    try { recognition.start(); } catch (e) {}
+                };
+                utterance.onend = () => {
+                    isSpeaking = false;
+                    hideStopBtn();
+                    try { recognition.start(); } catch (e) {}
+                };
+                utterance.onerror = () => {
+                    isSpeaking = false;
+                    hideStopBtn();
+                    try { recognition.start(); } catch (e) {}
+                };
+
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function clearConversation() {
+            speechSynthesis.cancel();
+            isSpeaking = false;
+            hideStopBtn();
+            conversationHistory = [];
+            document.getElementById('questionInput').value = '';
+            document.getElementById('transcription').textContent = '';
+            document.getElementById('statusMessage').textContent = '';
+            const container = document.getElementById('chatContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">💭</div>
+                    <div class="empty-state-text">Start by asking an AWS question...</div>
+                </div>`;
+        }
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                const openaiStatus = document.getElementById('openaiStatus');
+                const openaiText = document.getElementById('openaiText');
+                if (data.openai === 'connected') {
+                    openaiStatus.classList.add('connected');
+                    openaiStatus.classList.remove('disconnected');
+                    openaiText.textContent = 'OpenAI';
+                } else {
+                    openaiStatus.classList.add('disconnected');
+                    openaiStatus.classList.remove('connected');
+                    openaiText.textContent = 'OpenAI (offline)';
+                }
+
+                const notionStatus = document.getElementById('notionStatus');
+                const notionText = document.getElementById('notionText');
+                if (data.notion === 'connected') {
+                    notionStatus.classList.add('connected');
+                    notionStatus.classList.remove('disconnected');
+                    notionText.textContent = 'Notion';
+                } else {
+                    notionStatus.classList.add('disconnected');
+                    notionStatus.classList.remove('connected');
+                    notionText.textContent = 'Notion (offline)';
+                }
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkHealth();
+            setInterval(checkHealth, 5000);
+        });
+
+        document.getElementById('questionInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                askQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
