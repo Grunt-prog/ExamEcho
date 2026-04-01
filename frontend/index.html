@@ -267,6 +267,9 @@
         .btn-ask { background: var(--accent-primary); color: white; }
         .btn-ask:hover { transform: scale(1.05); filter: brightness(1.1); box-shadow: 0 0 15px var(--accent-primary); }
 
+        .btn-clear { background: #ef4444; color: white; }
+        .btn-clear:hover { transform: scale(1.05); filter: brightness(1.1); box-shadow: 0 0 15px #ef4444; }
+
         .btn-mic { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border-glow); }
         .btn-mic.recording { background: #ef4444; color: white; animation: pulse 1.5s infinite; }
 
@@ -375,6 +378,7 @@
                 
                 <div class="input-wrapper">
                     <input type="text" id="questionInput" placeholder="How do I secure an S3 bucket?" autocomplete="off" />
+                    <button class="btn-circle btn-clear" onclick="clearChat()" title="Clear Conversation">🗑️</button>
                     <button class="btn-circle btn-stop" id="stopBtn" onclick="stopSpeaking()" title="Stop Speaking">⏹️</button>
                     <button class="btn-circle btn-mic" id="micBtn" onclick="toggleMicrophone()">🎤</button>
                     <button class="btn-circle btn-ask" onclick="askQuestion()">🚀</button>
@@ -397,6 +401,22 @@
             speechSynthesis.cancel();
             isSpeaking = false;
             document.getElementById('stopBtn').classList.remove('visible');
+        }
+
+        function clearChat() {
+            if (isSpeaking) stopSpeaking();
+            conversationHistory = [];
+            
+            const container = document.getElementById('chatContainer');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🏗️</div>
+                    <h2 style="font-size: 24px;">Architecting the Cloud</h2>
+                    <p style="color: var(--text-secondary);">Ask about AWS services, best practices, or exam prep.</p>
+                </div>`;
+            
+            document.getElementById('questionInput').value = '';
+            document.getElementById('statusMessage').textContent = '';
         }
 
         function readAloud(text) {
