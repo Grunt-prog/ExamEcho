@@ -438,6 +438,11 @@
                 utt.onend = () => {
                     isSpeaking = false;
                     document.getElementById('stopBtn').classList.remove('visible');
+                    
+                    // Auto-listen after AI finishes speaking
+                    if (!isRecording && (typeof recognition !== 'undefined')) {
+                        try { recognition.start(); } catch(e) {}
+                    }
                 };
                 utt.onerror = () => {
                     isSpeaking = false;
