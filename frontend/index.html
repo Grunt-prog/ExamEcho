@@ -498,6 +498,8 @@
             const question = input.value.trim();
             if (!question) return;
 
+            if (isSpeaking) stopSpeaking();
+
             addMessage('user', question);
             input.value = '';
             document.getElementById('loading').style.display = 'block';
