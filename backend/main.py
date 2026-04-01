@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from typing import Optional
 import os
 from dotenv import load_dotenv
 import logging
@@ -45,6 +46,14 @@ class AnswerResponse(BaseModel):
     question: str
     answer: str
     added_to_notion: bool
+    message: str
+    notion_block_id: Optional[str] = None
+
+class RemoveNotionRequest(BaseModel):
+    block_id: str
+
+class RemoveNotionResponse(BaseModel):
+    removed: bool
     message: str
 
 # Routes
@@ -90,7 +99,7 @@ async def ask_question(request: QuestionRequest):
         logger.info(f"Got answer from OpenAI: {answer[:100]}...")
 
         # Save to Notion
-        notion_added = notion.add_qa_block(question, answer)
+        notion_added, notion_block_id = notion.add_qa_block(question, answer)
 
         if notion_added:
             logger.info("Added Q&A to Notion")
@@ -103,7 +112,8 @@ async def ask_question(request: QuestionRequest):
             question=question,
             answer=answer,
             added_to_notion=notion_added,
-            message=message
+            message=message,
+            notion_block_id=notion_block_id
         )
 
     except HTTPException:
@@ -111,6 +121,17 @@ async def ask_question(request: QuestionRequest):
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/remove-notion", response_model=RemoveNotionResponse)
+async def remove_notion_block(request: RemoveNotionRequest):
+    if not request.block_id:
+        raise HTTPException(status_code=400, detail="block_id is required")
+
+    removed = notion.remove_block(request.block_id)
+    if removed:
+        return RemoveNotionResponse(removed=True, message="Removed from Notion")
+    else:
+        raise HTTPException(status_code=500, detail="Failed to remove block from Notion")
 
 @app.get("/")
 def root():

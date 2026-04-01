@@ -516,7 +516,7 @@
             }
         }
 
-        function addMessage(role, content) {
+        function addMessage(role, content, notionBlockId = null) {
             const container = document.getElementById('chatContainer');
             const emptyState = container.querySelector('.empty-state');
             if (emptyState) emptyState.remove();
@@ -529,10 +529,51 @@
             message.textContent = content;
 
             messageGroup.appendChild(message);
+
+            if (role === 'assistant' && notionBlockId) {
+                const removeButton = document.createElement('button');
+                removeButton.className = 'btn-clear';
+                removeButton.textContent = 'Remove from Notion';
+                removeButton.addEventListener('click', () => removeFromNotion(notionBlockId, removeButton));
+                messageGroup.appendChild(removeButton);
+            }
+
             container.appendChild(messageGroup);
             container.scrollTop = container.scrollHeight;
         }
+        async function removeFromNotion(blockId, button) {
+            if (!blockId) return;
 
+            button.disabled = true;
+            button.textContent = 'Removing...';
+
+            try {
+                const response = await fetch(`${API_BASE}/remove-notion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ block_id: blockId })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    button.textContent = 'Removed';
+                    button.disabled = true;
+                    button.classList.add('disabled');
+                    document.getElementById('statusMessage').textContent = data.message;
+                    document.getElementById('statusMessage').className = 'status-message success';
+                } else {
+                    button.textContent = 'Remove from Notion';
+                    button.disabled = false;
+                    document.getElementById('statusMessage').textContent = `Error: ${data.detail}`;
+                    document.getElementById('statusMessage').className = 'status-message error';
+                }
+            } catch (error) {
+                button.textContent = 'Remove from Notion';
+                button.disabled = false;
+                document.getElementById('statusMessage').textContent = `Connection error: ${error.message}`;
+                document.getElementById('statusMessage').className = 'status-message error';
+            }
+        }
         async function askQuestion() {
             const question = document.getElementById('questionInput').value.trim();
             if (!question) return;
@@ -555,8 +596,12 @@
 
                 if (response.ok) {
                     conversationHistory.push({ role: "user", content: question });
-                    conversationHistory.push({ role: "assistant", content: data.answer });
-                    addMessage('assistant', data.answer);
+                    const assistantMessage = { role: "assistant", content: data.answer };
+                    if (data.notion_block_id) {
+                        assistantMessage.notion_block_id = data.notion_block_id;
+                    }
+                    conversationHistory.push(assistantMessage);
+                    addMessage('assistant', data.answer, data.notion_block_id);
 
                     const statusMsg = document.getElementById('statusMessage');
                     statusMsg.textContent = data.message;
