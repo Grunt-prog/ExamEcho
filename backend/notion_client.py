@@ -45,7 +45,12 @@ class NotionClient:
             response = requests.patch(url, json=payload, headers=self.headers, timeout=10)
 
             if response.status_code == 200:
-                block_id = self._find_last_block_id_by_text(qa_text)
+                data = response.json()
+                children = data.get("results") or []
+                if children:
+                    block_id = children[-1].get("id")
+                else:
+                    block_id = self._find_last_block_id_by_text(qa_text)
                 return True, block_id
             else:
                 print(f"Notion API error: {response.status_code} - {response.text}")
