@@ -533,9 +533,8 @@
         }
 
         async function removeFromNotion(blockId, btn, fromSidebar) {
-            if (!confirm('Permanently delete from Notion?')) return;
-            
             btn.innerHTML = `<span style="font-size:10px">...</span>`;
+
             try {
                 const res = await fetch(`${API_BASE}/remove-notion`, {
                     method: 'POST',
