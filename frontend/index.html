@@ -415,6 +415,13 @@
                 isSpeaking = true;
                 document.getElementById('stopBtn').classList.add('visible');
 
+                utt.onstart = () => {
+                    // Start listening automatically while speaking if not already listening
+                    if (!isRecording && (typeof recognition !== 'undefined')) {
+                        try { recognition.start(); } catch(e) {}
+                    }
+                };
+
                 utt.onend = () => {
                     isSpeaking = false;
                     document.getElementById('stopBtn').classList.remove('visible');
@@ -533,8 +540,6 @@
         }
 
         async function removeFromNotion(blockId, btn, fromSidebar) {
-            if (!confirm('Permanently delete from Notion?')) return;
-            
             btn.innerHTML = `<span style="font-size:10px">...</span>`;
             try {
                 const res = await fetch(`${API_BASE}/remove-notion`, {
