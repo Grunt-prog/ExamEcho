@@ -324,13 +324,21 @@
             stopRequested = true;
             speechSynthesis.cancel();
             isSpeaking = false;
-            if (recognition && isRecording) {
+            if (recognition) {
                 try {
                     recognition.abort();
                 } catch (e) {
                     console.warn('Failed to abort recognition:', e);
                 }
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.warn('Failed to stop recognition:', e);
+                }
             }
+            isRecording = false;
+            document.getElementById('micBtn').classList.remove('recording');
+            resetRecognition();
             document.getElementById('stopBtn').classList.remove('visible');
             document.getElementById('transcription').textContent = '⏹️ Stopped';
             setTimeout(() => {
@@ -407,20 +415,21 @@
             return corrected;
         }
 
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        function createRecognition() {
+            if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return null;
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            recognition.lang = 'en-US';
+            const rec = new SpeechRecognition();
+            rec.continuous = true;
+            rec.interimResults = true;
+            rec.lang = 'en-US';
 
-            recognition.onstart = () => {
+            rec.onstart = () => {
                 isRecording = true;
                 document.getElementById('micBtn').classList.add('recording');
                 document.getElementById('transcription').textContent = '🎤 Listening...';
             };
 
-            recognition.onresult = (event) => {
+            rec.onresult = (event) => {
                 let transcript = '';
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     transcript += event.results[i][0].transcript;
@@ -442,30 +451,49 @@
                 }
             };
 
-            recognition.onerror = (event) => {
+            rec.onerror = (event) => {
                 document.getElementById('transcription').textContent = `Error: ${event.error}`;
                 isRecording = false;
                 document.getElementById('micBtn').classList.remove('recording');
                 if (isSpeaking && !stopRequested) {
                     setTimeout(() => {
-                        try { recognition.start(); } catch (e) {}
+                        try { rec.start(); } catch (e) {
+                            console.warn('Retry recognition start failed:', e);
+                        }
                     }, 500);
                 }
             };
 
-            recognition.onend = () => {
+            rec.onend = () => {
                 isRecording = false;
                 document.getElementById('micBtn').classList.remove('recording');
                 if (!isSpeaking && !stopRequested) {
                     document.getElementById('transcription').textContent = '';
                 }
             };
+
+            return rec;
         }
 
+        function resetRecognition() {
+            recognition = createRecognition();
+        }
+
+        resetRecognition();
+
         function toggleMicrophone() {
-            if (!recognition) { alert('Speech Recognition not supported'); return; }
+            if (!recognition) {
+                alert('Speech Recognition not supported');
+                return;
+            }
+
             if (isRecording) {
-                recognition.stop();
+                stopRequested = false;
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.warn('Recognition stop failed:', e);
+                }
                 isRecording = false;
                 document.getElementById('micBtn').classList.remove('recording');
                 document.getElementById('transcription').textContent = '';
@@ -473,8 +501,17 @@
                 stopRequested = false;
                 document.getElementById('transcription').textContent = '';
                 document.getElementById('questionInput').value = '';
-                try { recognition.start(); } catch (e) {
-                    console.warn('Recognition start failed:', e);
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.warn('Recognition start failed, resetting recognition:', e);
+                    resetRecognition();
+                    try {
+                        recognition.start();
+                    } catch (e2) {
+                        console.error('Recognition restart failed:', e2);
+                        document.getElementById('transcription').textContent = '🎤 Microphone unavailable';
+                    }
                 }
             }
         }
