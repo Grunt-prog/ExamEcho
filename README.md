@@ -79,5 +79,9 @@ The project follows a feature-branch workflow. All premium UI changes were devel
 
 ---
 
+## Webapp image
+<img width="1915" height="1062" alt="image" src="https://github.com/user-attachments/assets/4685f8eb-8d15-49fc-91d5-1af6bbe44809" />
+
+
 ## 🤝 Contributing
 Contributions are welcome! Feel free to push issues or create pull requests for new exam preparation features.
