@@ -46,10 +46,12 @@ class NotionClient:
 
             if response.status_code == 200:
                 data = response.json()
-                children = data.get("results") or []
-                if children:
-                    block_id = children[-1].get("id")
-                else:
+                block_id = None
+                if isinstance(data, dict):
+                    results = data.get("results")
+                    if isinstance(results, list) and len(results) > 0:
+                        block_id = results[-1].get("id")
+                if not block_id:
                     block_id = self._find_last_block_id_by_text(qa_text)
                 return True, block_id
             else:
